@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - AI Assistant</title>
+    <style>
+       body {
+           font-family: Arial;
+           padding: 20px;
+           text-align: center;
+        }
+        #bgVideo {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           object-fit: cover;
+           z-index: -1;
+           opacity: 1;
+        }
+        #box {
+            background: white;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            margin: auto;
+            margin-top: 250px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 1;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        #bootOverlay {
+            position: fixed;
+            inset: 0;
+            background: black;
+            color: #0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            font-size: 16px;
+            z-index: 9999;
+        }
+        .boot-box {
+            width: 90%;
+            max-width: 700px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .typewriter {
+            white-space: pre-line;
+            font-size: 14px;
+            min-height: 120px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #222;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress {
+            height: 100%;
+            width: 0%;
+            background: #00ff99;
+            transition: 0.2s;
+        }
+        .fade-out {
+            animation: fadeOut 0.8s forwards;
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+    </style>
+</head>
+
+<body>
+
+
+<video autoplay muted loop id="bgVideo">
+    <source src="{{ url_for('static', filename='background.mp4') }}" type="video/mp4">
+</video>
+
+<div id="bootOverlay">
+    <div class="boot-box">
+        <h2 style="color:#00ff99;">JARVIS SYSTEM BOOTING...</h2>
+        <div id="bootText" class="typewriter"></div>
+        <div class="progress-bar"><div id="progressFill" class="progress"></div></div>
+    </div>
+</div>
+
+<h2 style="color:white; position:relative; z-index:2;">JARVIS: Personal AI Assistant</h2>
+
+<div id="box">
+    <p id="output">Say something...</p>
+    <button onclick="startListening()">Activate Jarvis</button>
+</div>
+
+<script>
+
+let bootLines = [
+    "Boot sequence initiated...",
+    "Loading AI modules...",
+    "Connecting to neural core...",
+    "Optimizing speech engines...",
+    "Activating user interface...",
+    "Jarvis system ready."
+];
+
+let lineIndex = 0, charIdx = 0;
+
+function typeBoot() {
+    let elem = document.getElementById("bootText");
+    let bar = document.getElementById("progressFill");
+
+    if (lineIndex < bootLines.length) {
+        let line = bootLines[lineIndex];
+
+        elem.textContent = bootLines.slice(0, lineIndex).join("\n") +
+                           "\n" + line.substring(0, charIdx);
+
+        bar.style.width = (lineIndex / bootLines.length * 100) + "%";
+
+        charIdx++;
+        if (charIdx <= line.length) {
+            setTimeout(typeBoot, 25);
+        } else {
+            lineIndex++;
+            charIdx = 0;
+            setTimeout(typeBoot, 250);
+        }
+    } else {
+        bar.style.width = "100%";
+        setTimeout(() => {
+            document.getElementById("bootOverlay").classList.add("fade-out");
+            setTimeout(() => {
+                document.getElementById("bootOverlay").style.display = "none";
+            }, 900);
+        }, 500);
+    }
+}
+
+window.onload = typeBoot;
+
+let recog;
+let listeningForCommand = false;
+let recognitionActive = false;
+let ignoreMic = false;
+
+function speak(text) {
+    ignoreMic = true;
+
+    let speech = new SpeechSynthesisUtterance(text);
+
+    speech.onstart = () => {
+        recognitionActive = false;
+        if (recog) recog.stop();
+    };
+
+    speech.onend = () => {
+        ignoreMic = false;
+        recognitionActive = true;
+        recog.start();
+    };
+
+    speechSynthesis.speak(speech);
+    document.getElementById("output").innerText = text;
+}
+
+
+function processCommand(command) {
+    command = command.toLowerCase();
+
+    if (command.includes("hi") || command.includes("hello")) {
+        speak("Hello, how can I help you?");
+    }
+    else if (command.includes("who are you")) {
+        speak("I am your AI assistant Jarvis.");
+    }
+    else if (command.includes("how are you")) {
+        speak("I am functioning perfectly.");
+    }
+    else if (command.includes("time")) {
+        speak("The time is " + new Date().toLocaleTimeString());
+    }
+    else if (command.includes("date")) {
+        speak("Today's date is " + new Date().toDateString());
+    }
+    else if (command.includes("open google")) {
+        speak("Opening Google");
+        window.open("https://google.com");
+    }
+    else if (command.includes("search")) {
+        let words = command.replace("search", "").trim();
+        speak("Searching for " + words);
+        window.open("https://www.google.com/search?q=" + words);
+    }
+    else if (command.includes("open youtube")) {
+        speak("Opening YouTube");
+        window.open("https://youtube.com");
+    }
+    else if (command.includes("play music")) {
+        speak("Playing music");
+        window.open("https://www.youtube.com/results?search_query=music");
+    }
+    else if (command.includes("joke")) {
+        let jokes = [
+            "Why don't programmers like nature? It has too many bugs.",
+            "Why did the function stop calling? Too many arguments.",
+            "I tried to catch fog yesterday. I mist."
+        ];
+        speak(jokes[Math.floor(Math.random()*jokes.length)]);
+    }
+    else if (command.includes("weather")) {
+        speak("Checking the weather");
+        window.open("https://www.google.com/search?q=weather");
+    }
+    else if (command.includes("open facebook")) {
+        speak("Opening Facebook");
+        window.open("https://facebook.com");
+    }
+    else if (command.includes("open instagram")) {
+        speak("Opening Instagram");
+        window.open("https://instagram.com");
+    }
+    else if (command.includes("calculate")) {
+        let problem = command.replace("calculate", "").trim();
+        try {
+            let result = eval(problem);
+            speak("The answer is " + result);
+        } catch {
+            speak("Sorry, I cannot calculate that.");
+        }
+    }
+    else {
+        speak("Sorry, I didn't understand that.");
+    }
+}
+
+
+function startListening() {
+
+    if (recog) return; 
+
+    recog = new webkitSpeechRecognition();
+    recog.continuous = true;
+    recog.lang = "en-US";
+    recog.interimResults = false;
+
+    recog.onresult = function(event) {
+        if (ignoreMic) return;
+
+        let command = event.results[event.results.length - 1][0].transcript.toLowerCase();
+        document.getElementById("output").innerText = "You said: " + command;
+
+        
+        if (!listeningForCommand) {
+            if (command.includes("jarvis") || command.includes("hey jarvis") || command.includes("okay jarvis")) {
+                speak("Yes, I am listening.");
+                listeningForCommand = true;
+            }
+            return;
+        }
+
+       
+        processCommand(command);
+        listeningForCommand = false;
+    };
+
+    recog.onend = function() {
+        if (!ignoreMic) recog.start();
+    };
+
+    recog.start();
+}
+</script>
+</body>
+</html>
